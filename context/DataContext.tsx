@@ -37,6 +37,7 @@ const INITIAL_DATA: Song[] = [
     isrc: 'TW-A01-24-00002',
     description: "深夜肚子餓時的即興創作。",
     musixmatchUrl: "https://www.musixmatch.com/artist/Willwi",
+    youtubeMusicUrl: "https://music.youtube.com/channel/WillwiID",
     spotifyLink: "https://open.spotify.com/artist/3ascZ8Rb2KDw4QyCy29Om4",
     appleMusicLink: "https://music.apple.com/us/artist/willwi/1798471457"
   }

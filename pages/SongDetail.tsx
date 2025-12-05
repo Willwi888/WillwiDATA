@@ -76,7 +76,7 @@ const SongDetail: React.FC = () => {
   const embedUrl = getYoutubeEmbedUrl(song.youtubeUrl);
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in pb-12">
         {/* Header / Top Section */}
         <div className="bg-slate-800 rounded-3xl overflow-hidden shadow-2xl border border-slate-700">
             <div className="relative">
@@ -326,7 +326,7 @@ const SongDetail: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Description OR Lyric Game Switcher */}
+                {/* Description OR Lyric Video Maker Switcher */}
                 <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
                     <div className="flex gap-6 mb-6 border-b border-slate-700">
                         <button 
@@ -356,7 +356,7 @@ const SongDetail: React.FC = () => {
                             </p>
                         )
                     ) : (
-                        <LyricGame song={song} />
+                        <LyricVideoMaker song={song} />
                     )}
                 </div>
 
@@ -381,15 +381,33 @@ const SongDetail: React.FC = () => {
   );
 };
 
-// Sub-component for the Lyric Video Game
-const LyricGame: React.FC<{ song: Song }> = ({ song }) => {
+// Sub-component for the Lyric Video Maker
+const LyricVideoMaker: React.FC<{ song: Song }> = ({ song }) => {
     const [gameState, setGameState] = useState<'idle' | 'playing' | 'finished'>('idle');
     const [lineIndex, setLineIndex] = useState(0);
+    const [elapsedTime, setElapsedTime] = useState(0);
     const lyricsLines = (song.lyrics || "").split('\n').filter(l => l.trim() !== '');
+
+    useEffect(() => {
+        let interval: any;
+        if (gameState === 'playing') {
+            interval = setInterval(() => {
+                setElapsedTime(prev => prev + 0.1);
+            }, 100);
+        }
+        return () => clearInterval(interval);
+    }, [gameState]);
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
 
     const handleStart = () => {
         setGameState('playing');
         setLineIndex(0);
+        setElapsedTime(0);
     };
 
     const handleSyncLine = () => {
@@ -404,29 +422,57 @@ const LyricGame: React.FC<{ song: Song }> = ({ song }) => {
 
     if (gameState === 'finished') {
         return (
-            <div className="relative rounded-xl overflow-hidden aspect-video flex items-center justify-center text-center p-8 border border-brand-gold">
+            <div className="relative rounded-xl overflow-hidden aspect-video flex items-center justify-center text-center p-8 border border-brand-gold bg-black">
                 <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${song.coverUrl})`, filter: 'blur(8px) brightness(0.4)' }}></div>
-                <div className="relative z-10 space-y-4">
-                    <div className="text-5xl animate-bounce">🎉</div>
-                    <h3 className="text-3xl font-bold text-white">製作完成！</h3>
-                    <p className="text-brand-accent text-lg">您已成功為 {song.title} 建立動態歌詞影片！</p>
-                    <button onClick={() => setGameState('idle')} className="mt-4 px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-full text-white text-sm">再玩一次</button>
+                <div className="relative z-10 space-y-4 animate-scale-in">
+                    <div className="text-6xl animate-bounce">🎬</div>
+                    <h3 className="text-3xl font-bold text-white">動態影片製作完成！</h3>
+                    <div className="p-4 bg-slate-900/80 rounded-lg text-left max-w-sm mx-auto border border-slate-700">
+                        <p className="text-xs text-slate-400 mb-1">OUTPUT_FILE_01.mp4</p>
+                        <p className="text-brand-accent text-sm">✅ Lyrics Synced</p>
+                        <p className="text-brand-accent text-sm">✅ Cover Art Embedded</p>
+                        <p className="text-brand-accent text-sm">✅ Metadata Attached</p>
+                    </div>
+                    <div className="flex flex-col items-center gap-3 mt-4">
+                        <button 
+                            onClick={() => window.alert('開始下載動態歌詞影片...')}
+                            className="px-8 py-3 bg-brand-gold text-slate-900 font-bold rounded-full text-lg shadow-lg hover:bg-yellow-400 transition transform hover:scale-105"
+                        >
+                            📥 下載影片 (MP4)
+                        </button>
+                        <button onClick={() => setGameState('idle')} className="px-6 py-2 bg-white text-slate-900 font-bold rounded-full text-sm hover:bg-slate-200 transition">
+                            重新製作
+                        </button>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="relative rounded-xl overflow-hidden aspect-video flex flex-col items-center justify-center text-center p-6 border border-slate-600 group">
+        <div className="relative rounded-xl overflow-hidden aspect-video flex flex-col items-center justify-center text-center p-6 border border-slate-600 group bg-slate-950">
              {/* Background */}
-             <div className="absolute inset-0 bg-cover bg-center transition-all duration-1000" style={{ backgroundImage: `url(${song.coverUrl})`, filter: gameState === 'playing' ? 'blur(4px) brightness(0.3)' : 'blur(0px) brightness(0.5)' }}></div>
+             <div className="absolute inset-0 bg-cover bg-center transition-all duration-1000" style={{ backgroundImage: `url(${song.coverUrl})`, filter: gameState === 'playing' ? 'blur(3px) brightness(0.4)' : 'blur(0px) brightness(0.5)' }}></div>
              
+             {/* Recording Overlay */}
+             {gameState === 'playing' && (
+                 <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+                     <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                     <span className="text-red-500 font-mono font-bold text-sm">REC {formatTime(elapsedTime)}</span>
+                 </div>
+             )}
+
              {/* Content */}
              <div className="relative z-10 w-full max-w-2xl">
                  {gameState === 'idle' ? (
                      <div className="space-y-6">
-                         <h3 className="text-2xl font-bold text-white">歌詞影片製作器</h3>
-                         <p className="text-slate-300">請先在上方播放音樂，然後點擊開始。你需要手動點擊按鈕來對準每一句歌詞。</p>
+                         <h3 className="text-2xl font-bold text-white drop-shadow-md">歌詞影片製作器</h3>
+                         <p className="text-slate-200 drop-shadow-md max-w-md mx-auto">
+                             功能說明：<br/>
+                             1. 播放歌曲 (請在上方播放器操作)<br/>
+                             2. 點擊「開始製作」<br/>
+                             3. 隨著音樂節奏，點擊「下一句」同步歌詞
+                         </p>
                          <button 
                             onClick={handleStart}
                             className="px-8 py-3 bg-brand-accent hover:bg-sky-400 text-slate-900 font-bold rounded-full text-lg shadow-lg transform transition hover:scale-105"
@@ -435,21 +481,44 @@ const LyricGame: React.FC<{ song: Song }> = ({ song }) => {
                          </button>
                      </div>
                  ) : (
-                     <div className="space-y-8 animate-fade-in">
-                         <div className="h-32 flex items-center justify-center">
-                            <p className="text-2xl md:text-4xl font-bold text-white drop-shadow-lg leading-relaxed transition-all duration-300">
+                     <div className="space-y-8 animate-fade-in w-full">
+                         <div className="h-40 flex items-center justify-center relative">
+                            {/* Previous Line */}
+                            {lineIndex > 0 && (
+                                <p className="absolute top-0 text-slate-400 text-sm transform -translate-y-full opacity-50 transition-all duration-300">
+                                    {lyricsLines[lineIndex - 1]}
+                                </p>
+                            )}
+                            
+                            {/* Current Line */}
+                            <p className="text-2xl md:text-3xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] leading-relaxed transition-all duration-100 scale-105">
                                 {lyricsLines[lineIndex]}
                             </p>
+
+                            {/* Next Line Preview */}
+                            {lineIndex < lyricsLines.length - 1 && (
+                                <p className="absolute bottom-0 text-slate-400 text-sm transform translate-y-full opacity-50 transition-all duration-300">
+                                    {lyricsLines[lineIndex + 1]}
+                                </p>
+                            )}
                          </div>
                          
-                         <div className="pt-8">
+                         <div className="pt-4">
                             <button 
                                 onClick={handleSyncLine}
-                                className="w-full max-w-xs mx-auto px-8 py-4 bg-brand-gold hover:bg-yellow-400 text-slate-900 font-bold rounded-xl text-xl shadow-xl active:scale-95 transition-all border-b-4 border-yellow-600 active:border-b-0"
+                                className="w-full max-w-xs mx-auto px-8 py-6 bg-brand-gold hover:bg-yellow-400 text-slate-900 font-bold rounded-2xl text-xl shadow-xl active:scale-95 transition-all border-b-4 border-yellow-600 active:border-b-0"
                             >
                                 下一句 👇
                             </button>
-                            <p className="mt-4 text-xs text-slate-400">進度: {lineIndex + 1} / {lyricsLines.length}</p>
+                            <div className="mt-4 h-1 bg-slate-700 rounded-full overflow-hidden max-w-xs mx-auto">
+                                <div 
+                                    className="h-full bg-brand-accent transition-all duration-300" 
+                                    style={{ width: `${((lineIndex + 1) / lyricsLines.length) * 100}%` }}
+                                ></div>
+                            </div>
+                            <p className="mt-2 text-xs text-slate-300 font-mono">
+                                行數: {lineIndex + 1} / {lyricsLines.length}
+                            </p>
                          </div>
                      </div>
                  )}

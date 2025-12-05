@@ -1,0 +1,5 @@
+{
+  "name": "Willwi Music Manager",
+  "description": "A comprehensive music catalog management system for artist Willwi, featuring local data persistence, metadata management, and AI-powered music critique.",
+  "requestFramePermissions": []
+}

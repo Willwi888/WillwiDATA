@@ -90,6 +90,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             © {new Date().getFullYear()} Willwi Music.
           </div>
           <div className="flex flex-wrap justify-center gap-6 text-xs tracking-widest uppercase">
+            <a href="https://musicbrainz.org/artist/526cc0f8-da20-4d2d-86a5-4bf841a6ba3c" target="_blank" rel="noreferrer" className="text-slate-500 hover:text-white transition-colors">MusicBrainz</a>
             <a href="https://www.musixmatch.com/artist/Willwi" target="_blank" rel="noreferrer" className="text-slate-500 hover:text-white transition-colors">Musixmatch</a>
             <a href="https://music.apple.com/us/artist/willwi/1798471457" target="_blank" rel="noreferrer" className="text-slate-500 hover:text-white transition-colors">Apple Music</a>
             <a href="https://open.spotify.com/artist/3ascZ8Rb2KDw4QyCy29Om4" target="_blank" rel="noreferrer" className="text-slate-500 hover:text-white transition-colors">Spotify</a>

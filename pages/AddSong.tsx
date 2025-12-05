@@ -2,10 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { Language, ProjectType, Song } from '../types';
+import { searchSpotifyTracks, SpotifyTrack } from '../services/spotifyService';
 
 const AddSong: React.FC = () => {
   const navigate = useNavigate();
   const { addSong } = useData();
+
+  // Spotify Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
+  const [showResults, setShowResults] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Song>>({
     title: '',
@@ -27,6 +34,40 @@ const AddSong: React.FC = () => {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleSpotifySearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setShowResults(true);
+    // Add "Willwi" to query to prioritize your songs if user just types title
+    const results = await searchSpotifyTracks(`${searchQuery} artist:Willwi`);
+    // If no results with artist filter, try broad search
+    if (results.length === 0) {
+         const broadResults = await searchSpotifyTracks(searchQuery);
+         setSearchResults(broadResults);
+    } else {
+        setSearchResults(results);
+    }
+    setIsSearching(false);
+  };
+
+  const importSpotifyData = (track: SpotifyTrack) => {
+    const largestImage = track.album.images[0]?.url || '';
+    
+    setFormData(prev => ({
+        ...prev,
+        title: track.name,
+        releaseDate: track.album.release_date,
+        coverUrl: largestImage,
+        isrc: track.external_ids.isrc || '',
+        upc: track.album.external_ids?.upc || track.album.external_ids?.ean || '',
+        spotifyId: track.id,
+        spotifyLink: track.external_urls.spotify,
+        // Reset or keep other fields
+        versionLabel: track.name.includes('(') ? track.name.split('(')[1].replace(')', '') : '', 
+    }));
+    setShowResults(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -61,8 +102,57 @@ const AddSong: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pb-12">
       <h2 className="text-3xl font-bold text-white mb-6">新增歌曲</h2>
+
+      {/* Spotify Import Section */}
+      <div className="bg-gradient-to-r from-green-900/50 to-slate-900 p-6 rounded-xl border border-green-700/50 mb-8">
+        <h3 className="text-xl font-bold text-green-400 mb-4 flex items-center gap-2">
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            從 Spotify 快速匯入
+        </h3>
+        <div className="flex gap-4">
+            <input 
+                type="text" 
+                placeholder="輸入歌名搜尋 (例如: 再愛一次)"
+                className="flex-grow bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-green-500 outline-none"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSpotifySearch()}
+            />
+            <button 
+                onClick={handleSpotifySearch}
+                disabled={isSearching}
+                className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+            >
+                {isSearching ? '搜尋中...' : '搜尋'}
+            </button>
+        </div>
+
+        {/* Search Results */}
+        {showResults && searchResults.length > 0 && (
+            <div className="mt-4 grid gap-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                {searchResults.map(track => (
+                    <div key={track.id} className="flex items-center gap-4 p-3 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 cursor-pointer transition-colors" onClick={() => importSpotifyData(track)}>
+                        <img src={track.album.images[2]?.url || track.album.images[0]?.url} className="w-12 h-12 rounded object-cover" alt="cover" />
+                        <div className="flex-grow">
+                            <div className="font-bold text-white">{track.name}</div>
+                            <div className="text-xs text-slate-400">
+                                {track.artists.map(a => a.name).join(', ')} • {track.album.name} ({track.album.release_date})
+                            </div>
+                        </div>
+                        <button className="text-xs bg-green-900/50 text-green-400 px-3 py-1 rounded border border-green-800">
+                            選用
+                        </button>
+                    </div>
+                ))}
+            </div>
+        )}
+         {showResults && searchResults.length === 0 && !isSearching && searchQuery && (
+             <div className="mt-4 text-slate-400 text-sm">找不到相關歌曲，請嘗試不同關鍵字。</div>
+         )}
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-8 bg-slate-800 p-8 rounded-xl border border-slate-700">
         
         {/* Basic Info */}
@@ -95,7 +185,10 @@ const AddSong: React.FC = () => {
             </div>
              <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">封面圖片 URL</label>
-              <input name="coverUrl" value={formData.coverUrl} onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white" placeholder="https://..." />
+              <div className="flex gap-2">
+                <input name="coverUrl" value={formData.coverUrl} onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white" placeholder="https://..." />
+                {formData.coverUrl && <img src={formData.coverUrl} alt="Preview" className="w-10 h-10 rounded object-cover border border-slate-600" />}
+              </div>
             </div>
             <div className="flex items-center">
                <input type="checkbox" id="isEditorPick" name="isEditorPick" checked={formData.isEditorPick} onChange={handleChange} className="h-5 w-5 text-brand-accent bg-slate-900 border-slate-600 rounded" />

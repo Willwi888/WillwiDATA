@@ -4,6 +4,9 @@ export enum Language {
   Japanese = '日語',
   Korean = '韓語',
   English = '英語',
+  Thai = '泰語',
+  Italian = '義大利語',
+  French = '法語',
   Instrumental = '純音樂'
 }
 

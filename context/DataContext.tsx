@@ -18,11 +18,13 @@ const INITIAL_DATA: Song[] = [
     isEditorPick: true,
     isrc: 'TW-A01-23-00001',
     spotifyId: '4uLU6hMCjMI75M1A2tKZBC', // Example ID
-    lyrics: "走在 熟悉的街角\n回憶 像是海浪拍打...",
+    lyrics: "走在 熟悉的街角\n回憶 像是海浪拍打\n每一個呼吸\n都是你的氣息\n再愛一次\n能不能\n再愛一次",
     description: "一首關於失去與重逢的抒情搖滾。",
     youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Rick roll as placeholder
     musixmatchUrl: "https://www.musixmatch.com/artist/Willwi",
-    youtubeMusicUrl: "https://music.youtube.com/channel/WillwiID"
+    youtubeMusicUrl: "https://music.youtube.com/channel/WillwiID",
+    spotifyLink: "https://open.spotify.com/artist/3ascZ8Rb2KDw4QyCy29Om4",
+    appleMusicLink: "https://music.apple.com/us/artist/willwi/1798471457"
   },
   {
     id: '2',
@@ -34,6 +36,9 @@ const INITIAL_DATA: Song[] = [
     isEditorPick: false,
     isrc: 'TW-A01-24-00002',
     description: "深夜肚子餓時的即興創作。",
+    musixmatchUrl: "https://www.musixmatch.com/artist/Willwi",
+    spotifyLink: "https://open.spotify.com/artist/3ascZ8Rb2KDw4QyCy29Om4",
+    appleMusicLink: "https://music.apple.com/us/artist/willwi/1798471457"
   }
 ];
 

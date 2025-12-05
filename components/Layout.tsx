@@ -50,6 +50,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <a href="https://music.apple.com/us/artist/willwi/1798471457" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-brand-accent">Apple Music</a>
             <a href="https://open.spotify.com/artist/3ascZ8Rb2KDw4QyCy29Om4" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-brand-accent">Spotify</a>
             <a href="https://www.youtube.com/@Willwi888" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-brand-accent">YouTube OAC</a>
+            <a href="https://willwi.com" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-brand-accent">Official</a>
           </div>
         </div>
       </footer>

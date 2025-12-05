@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { Song, Language, ProjectType } from '../types';
@@ -11,6 +11,9 @@ const SongDetail: React.FC = () => {
   const [song, setSong] = useState<Song | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
   
+  // View Mode: Story or Lyric Game
+  const [storyMode, setStoryMode] = useState<'desc' | 'game'>('desc');
+
   // Edit State
   const [editForm, setEditForm] = useState<Partial<Song>>({});
 
@@ -57,7 +60,6 @@ const SongDetail: React.FC = () => {
   const getYoutubeEmbedUrl = (url?: string) => {
     if (!url) return null;
     try {
-        // Handle various YouTube URL formats
         let videoId = '';
         if (url.includes('youtu.be/')) {
             videoId = url.split('youtu.be/')[1].split('?')[0];
@@ -221,7 +223,7 @@ const SongDetail: React.FC = () => {
 
                     {isEditing && (
                         <div className="mt-4 pt-4 border-t border-slate-700">
-                            <label className="block text-xs text-brand-accent mb-1">YouTube 影片網址 (貼上網址自動轉換)</label>
+                            <label className="block text-xs text-brand-accent mb-1">YouTube 影片網址</label>
                             <input 
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm text-white" 
                                 placeholder="https://www.youtube.com/watch?v=..."
@@ -301,7 +303,7 @@ const SongDetail: React.FC = () => {
                  </div>
             </div>
 
-            {/* Right Col: Lyrics & AI */}
+            {/* Right Col: Lyrics & AI & Story/Game */}
             <div className="lg:col-span-2 space-y-8">
                  {/* AI Review */}
                  <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-6 border border-indigo-500/30 relative overflow-hidden">
@@ -324,25 +326,43 @@ const SongDetail: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Description */}
+                {/* Description OR Lyric Game Switcher */}
                 <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-                    <h3 className="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">創作故事</h3>
-                     {isEditing ? (
-                        <textarea 
-                             className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-base text-white h-32"
-                             value={editForm.description || ''}
-                             onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                        />
+                    <div className="flex gap-6 mb-6 border-b border-slate-700">
+                        <button 
+                            onClick={() => setStoryMode('desc')}
+                            className={`pb-3 text-lg font-bold transition-colors border-b-2 ${storyMode === 'desc' ? 'border-brand-accent text-brand-accent' : 'border-transparent text-slate-400 hover:text-white'}`}
+                        >
+                            創作故事
+                        </button>
+                         <button 
+                            onClick={() => setStoryMode('game')}
+                            className={`pb-3 text-lg font-bold transition-colors border-b-2 ${storyMode === 'game' ? 'border-brand-accent text-brand-accent' : 'border-transparent text-slate-400 hover:text-white'}`}
+                        >
+                            🎬 歌詞影片製作 (互動)
+                        </button>
+                    </div>
+
+                    {storyMode === 'desc' ? (
+                         isEditing ? (
+                            <textarea 
+                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-base text-white h-32"
+                                 value={editForm.description || ''}
+                                 onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                            />
+                        ) : (
+                            <p className="text-slate-300 leading-relaxed whitespace-pre-line">
+                                {song.description || "暫無描述。"}
+                            </p>
+                        )
                     ) : (
-                        <p className="text-slate-300 leading-relaxed whitespace-pre-line">
-                            {song.description || "暫無描述。"}
-                        </p>
+                        <LyricGame song={song} />
                     )}
                 </div>
 
-                {/* Lyrics */}
+                {/* Lyrics Display (Static) */}
                 <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-                    <h3 className="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">歌詞</h3>
+                    <h3 className="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">完整歌詞</h3>
                      {isEditing ? (
                         <textarea 
                              className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-base text-white h-96 font-sans"
@@ -359,6 +379,83 @@ const SongDetail: React.FC = () => {
         </div>
     </div>
   );
+};
+
+// Sub-component for the Lyric Video Game
+const LyricGame: React.FC<{ song: Song }> = ({ song }) => {
+    const [gameState, setGameState] = useState<'idle' | 'playing' | 'finished'>('idle');
+    const [lineIndex, setLineIndex] = useState(0);
+    const lyricsLines = (song.lyrics || "").split('\n').filter(l => l.trim() !== '');
+
+    const handleStart = () => {
+        setGameState('playing');
+        setLineIndex(0);
+    };
+
+    const handleSyncLine = () => {
+        if (lineIndex < lyricsLines.length - 1) {
+            setLineIndex(prev => prev + 1);
+        } else {
+            setGameState('finished');
+        }
+    };
+
+    if (!song.lyrics) return <div className="text-slate-500 p-4">請先輸入歌詞才能使用此功能。</div>;
+
+    if (gameState === 'finished') {
+        return (
+            <div className="relative rounded-xl overflow-hidden aspect-video flex items-center justify-center text-center p-8 border border-brand-gold">
+                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${song.coverUrl})`, filter: 'blur(8px) brightness(0.4)' }}></div>
+                <div className="relative z-10 space-y-4">
+                    <div className="text-5xl animate-bounce">🎉</div>
+                    <h3 className="text-3xl font-bold text-white">製作完成！</h3>
+                    <p className="text-brand-accent text-lg">您已成功為 {song.title} 建立動態歌詞影片！</p>
+                    <button onClick={() => setGameState('idle')} className="mt-4 px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-full text-white text-sm">再玩一次</button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative rounded-xl overflow-hidden aspect-video flex flex-col items-center justify-center text-center p-6 border border-slate-600 group">
+             {/* Background */}
+             <div className="absolute inset-0 bg-cover bg-center transition-all duration-1000" style={{ backgroundImage: `url(${song.coverUrl})`, filter: gameState === 'playing' ? 'blur(4px) brightness(0.3)' : 'blur(0px) brightness(0.5)' }}></div>
+             
+             {/* Content */}
+             <div className="relative z-10 w-full max-w-2xl">
+                 {gameState === 'idle' ? (
+                     <div className="space-y-6">
+                         <h3 className="text-2xl font-bold text-white">歌詞影片製作器</h3>
+                         <p className="text-slate-300">請先在上方播放音樂，然後點擊開始。你需要手動點擊按鈕來對準每一句歌詞。</p>
+                         <button 
+                            onClick={handleStart}
+                            className="px-8 py-3 bg-brand-accent hover:bg-sky-400 text-slate-900 font-bold rounded-full text-lg shadow-lg transform transition hover:scale-105"
+                        >
+                            開始製作 ▶
+                         </button>
+                     </div>
+                 ) : (
+                     <div className="space-y-8 animate-fade-in">
+                         <div className="h-32 flex items-center justify-center">
+                            <p className="text-2xl md:text-4xl font-bold text-white drop-shadow-lg leading-relaxed transition-all duration-300">
+                                {lyricsLines[lineIndex]}
+                            </p>
+                         </div>
+                         
+                         <div className="pt-8">
+                            <button 
+                                onClick={handleSyncLine}
+                                className="w-full max-w-xs mx-auto px-8 py-4 bg-brand-gold hover:bg-yellow-400 text-slate-900 font-bold rounded-xl text-xl shadow-xl active:scale-95 transition-all border-b-4 border-yellow-600 active:border-b-0"
+                            >
+                                下一句 👇
+                            </button>
+                            <p className="mt-4 text-xs text-slate-400">進度: {lineIndex + 1} / {lyricsLines.length}</p>
+                         </div>
+                     </div>
+                 )}
+             </div>
+        </div>
+    );
 };
 
 export default SongDetail;

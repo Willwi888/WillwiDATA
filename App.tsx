@@ -5,7 +5,6 @@ import Home from './pages/Home';
 import Database from './pages/Database';
 import AddSong from './pages/AddSong';
 import SongDetail from './pages/SongDetail';
-import Interactive from './pages/Interactive';
 import { DataProvider } from './context/DataContext';
 
 const App: React.FC = () => {
@@ -18,7 +17,6 @@ const App: React.FC = () => {
             <Route path="/database" element={<Database />} />
             <Route path="/add" element={<AddSong />} />
             <Route path="/song/:id" element={<SongDetail />} />
-            <Route path="/interactive" element={<Interactive />} />
             </Routes>
         </Layout>
         </HashRouter>

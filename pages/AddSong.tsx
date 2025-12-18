@@ -14,6 +14,7 @@ const AddSong: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
   const [showResults, setShowResults] = useState(false);
 
+  // Pre-fill MusicBrainz ID for Willwi
   const [formData, setFormData] = useState<Partial<Song>>({
     title: '',
     versionLabel: '',
@@ -23,7 +24,8 @@ const AddSong: React.FC = () => {
     isEditorPick: false,
     coverUrl: 'https://picsum.photos/400/400', // Default placeholder
     lyrics: '',
-    description: ''
+    description: '',
+    musicBrainzArtistId: '526cc0f8-da20-4d2d-86a5-4bf841a6ba3c'
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -55,9 +57,26 @@ const AddSong: React.FC = () => {
   const importSpotifyData = (track: SpotifyTrack) => {
     const largestImage = track.album.images[0]?.url || '';
     
+    // Intelligent Version Parsing
+    // 1. Check for "Title (Version)" pattern
+    // 2. Check for "Title - Version" pattern
+    let cleanTitle = track.name;
+    let version = '';
+
+    const parenMatch = cleanTitle.match(/^(.*?)\s*\(([^)]+)\)$/);
+    if (parenMatch) {
+        cleanTitle = parenMatch[1];
+        version = parenMatch[2];
+    } else if (cleanTitle.includes(' - ')) {
+        const parts = cleanTitle.split(' - ');
+        version = parts.pop() || ''; // Take the last part as version
+        cleanTitle = parts.join(' - ');
+    }
+
     setFormData(prev => ({
         ...prev,
-        title: track.name,
+        title: cleanTitle,
+        versionLabel: version,
         releaseDate: track.album.release_date,
         coverUrl: largestImage,
         isrc: track.external_ids.isrc || '',
@@ -65,7 +84,6 @@ const AddSong: React.FC = () => {
         spotifyId: track.id,
         spotifyLink: track.external_urls.spotify,
         // Reset or keep other fields
-        versionLabel: track.name.includes('(') ? track.name.split('(')[1].replace(')', '') : '', 
     }));
     setShowResults(false);
   };
@@ -73,32 +91,40 @@ const AddSong: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Basic validation
     if (!formData.title) return alert("請輸入歌名");
+    if (!formData.releaseDate) return alert("請輸入發行日期");
 
-    const newSong: Song = {
-      id: Date.now().toString(), // Simple ID generation
-      title: formData.title!,
-      versionLabel: formData.versionLabel || '',
-      coverUrl: formData.coverUrl!,
-      language: formData.language as Language,
-      projectType: formData.projectType as ProjectType,
-      releaseDate: formData.releaseDate!,
-      isEditorPick: !!formData.isEditorPick,
-      isrc: formData.isrc,
-      upc: formData.upc,
-      spotifyId: formData.spotifyId,
-      youtubeUrl: formData.youtubeUrl,
-      musixmatchUrl: formData.musixmatchUrl,
-      youtubeMusicUrl: formData.youtubeMusicUrl,
-      spotifyLink: formData.spotifyLink,
-      appleMusicLink: formData.appleMusicLink,
-      lyrics: formData.lyrics,
-      description: formData.description,
-      credits: formData.credits
-    };
+    try {
+        const newSong: Song = {
+            id: Date.now().toString(), // Simple ID generation
+            title: formData.title!,
+            versionLabel: formData.versionLabel || '',
+            coverUrl: formData.coverUrl!,
+            language: formData.language as Language,
+            projectType: formData.projectType as ProjectType,
+            releaseDate: formData.releaseDate!,
+            isEditorPick: !!formData.isEditorPick,
+            isrc: formData.isrc,
+            upc: formData.upc,
+            spotifyId: formData.spotifyId,
+            musicBrainzArtistId: formData.musicBrainzArtistId,
+            youtubeUrl: formData.youtubeUrl,
+            musixmatchUrl: formData.musixmatchUrl,
+            youtubeMusicUrl: formData.youtubeMusicUrl,
+            spotifyLink: formData.spotifyLink,
+            appleMusicLink: formData.appleMusicLink,
+            lyrics: formData.lyrics,
+            description: formData.description,
+            credits: formData.credits
+        };
 
-    addSong(newSong);
-    navigate('/database');
+        addSong(newSong);
+        navigate('/database');
+    } catch (error) {
+        console.error("Error adding song:", error);
+        alert("新增歌曲時發生錯誤，請稍後再試。");
+    }
   };
 
   return (
@@ -180,8 +206,8 @@ const AddSong: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">發行日期</label>
-              <input type="date" name="releaseDate" value={formData.releaseDate} onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white" />
+              <label className="block text-sm font-medium text-slate-300 mb-1">發行日期 *</label>
+              <input required type="date" name="releaseDate" value={formData.releaseDate} onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white" />
             </div>
              <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">封面圖片 URL</label>
@@ -200,7 +226,7 @@ const AddSong: React.FC = () => {
         {/* Metadata */}
         <section>
           <h3 className="text-xl font-semibold text-brand-accent mb-4 border-b border-slate-700 pb-2">識別碼 (Metadata)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">ISRC</label>
               <input name="isrc" value={formData.isrc || ''} onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white font-mono" placeholder="TW-..." />
@@ -212,6 +238,10 @@ const AddSong: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Spotify ID (URI)</label>
               <input name="spotifyId" value={formData.spotifyId || ''} onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white font-mono" placeholder="4uLU6hMC..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">MusicBrainz Artist ID</label>
+              <input name="musicBrainzArtistId" value={formData.musicBrainzArtistId || ''} onChange={handleChange} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white font-mono" placeholder="UUID" />
             </div>
           </div>
         </section>

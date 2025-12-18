@@ -89,6 +89,12 @@ const SongDetail: React.FC = () => {
 
   const embedUrl = getYoutubeEmbedUrl(song.youtubeUrl);
 
+  // Helper to open Musixmatch search
+  const searchMusixmatch = () => {
+    const query = `Willwi ${editForm.title}`;
+    window.open(`https://www.musixmatch.com/search/${encodeURIComponent(query)}`, '_blank');
+  };
+
   return (
     <div className="animate-fade-in pb-12">
         {/* Header / Top Section */}
@@ -163,17 +169,20 @@ const SongDetail: React.FC = () => {
                                 )}
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 bg-slate-900/50 p-4 rounded-xl border border-white/10">
-                                    {['isrc', 'upc', 'spotifyId'].map(field => (
+                                    {['isrc', 'upc', 'spotifyId', 'musicBrainzArtistId'].map(field => (
                                         <div key={field}>
-                                            <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{field}</div>
+                                            <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">
+                                                {field === 'musicBrainzArtistId' ? 'MusicBrainz ID' : field}
+                                            </div>
                                             {isEditing ? (
                                                  <input 
                                                     className="w-full bg-slate-800 border border-slate-600 rounded p-1 text-sm text-white font-mono"
                                                     value={(editForm as any)[field] || ''}
                                                     onChange={(e) => setEditForm({...editForm, [field]: e.target.value})}
+                                                    placeholder={field === 'musicBrainzArtistId' ? 'UUID' : ''}
                                                 />
                                             ) : (
-                                                <div className="font-mono text-sm text-brand-accent select-all">{(song as any)[field] || '-'}</div>
+                                                <div className="font-mono text-sm text-brand-accent select-all truncate">{(song as any)[field] || '-'}</div>
                                             )}
                                         </div>
                                     ))}
@@ -279,12 +288,21 @@ const SongDetail: React.FC = () => {
                                 value={editForm.appleMusicLink || ''}
                                 onChange={(e) => setEditForm({...editForm, appleMusicLink: e.target.value})}
                             />
-                             <input 
-                                className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white" 
-                                placeholder="Musixmatch URL"
-                                value={editForm.musixmatchUrl || ''}
-                                onChange={(e) => setEditForm({...editForm, musixmatchUrl: e.target.value})}
-                            />
+                            <div className="flex gap-2">
+                                <input 
+                                    className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white" 
+                                    placeholder="Musixmatch URL"
+                                    value={editForm.musixmatchUrl || ''}
+                                    onChange={(e) => setEditForm({...editForm, musixmatchUrl: e.target.value})}
+                                />
+                                <button 
+                                    onClick={searchMusixmatch}
+                                    className="px-3 bg-slate-700 hover:bg-brand-accent hover:text-slate-900 rounded border border-slate-600 transition-colors text-xs whitespace-nowrap font-bold"
+                                    title="在 Musixmatch 上搜尋這首歌"
+                                >
+                                    🔍 搜尋
+                                </button>
+                            </div>
                              <input 
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white" 
                                 placeholder="YouTube Music URL"

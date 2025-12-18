@@ -1,3 +1,4 @@
+
 export enum Language {
   Mandarin = '華語',
   Taiwanese = '台語',
@@ -29,6 +30,7 @@ export interface Song {
   isrc?: string;
   upc?: string;
   spotifyId?: string; // for embedding
+  musicBrainzArtistId?: string; // New field
   
   // External Links
   youtubeUrl?: string; // Lyric Video / MV
@@ -49,4 +51,5 @@ export interface SongContextType {
   updateSong: (id: string, updatedSong: Partial<Song>) => void;
   deleteSong: (id: string) => void;
   getSong: (id: string) => Song | undefined;
+  importData: (newSongs: Song[]) => void;
 }

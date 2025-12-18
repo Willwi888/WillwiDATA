@@ -29,9 +29,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <div className="ml-10 flex items-baseline space-x-8">
                 <Link to="/" className={isActive('/')}>首頁</Link>
                 <Link to="/database" className={isActive('/database')}>作品管理</Link>
-                <Link to="/interactive" className={`${location.pathname === '/interactive' ? 'text-brand-gold font-bold' : 'text-slate-400 hover:text-brand-gold transition-colors'}`}>
-                  🍜 泡麵阿嬤
-                </Link>
                 <Link to="/add" className="px-4 py-2 rounded-full border border-slate-600 text-slate-300 hover:bg-white hover:text-slate-900 transition-all text-sm font-bold">
                   + 新增作品
                 </Link>
@@ -68,7 +65,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               <Link to="/" onClick={() => setIsMenuOpen(false)} className={mobileLinkClass('/')}>首頁</Link>
               <Link to="/database" onClick={() => setIsMenuOpen(false)} className={mobileLinkClass('/database')}>作品資料庫</Link>
-              <Link to="/interactive" onClick={() => setIsMenuOpen(false)} className={mobileLinkClass('/interactive')}>🍜 泡麵阿嬤開講</Link>
               <Link to="/add" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-brand-accent bg-slate-800/50 mt-4 border border-brand-accent/20">
                 + 新增歌曲
               </Link>

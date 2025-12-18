@@ -66,7 +66,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Save to LocalStorage whenever songs change
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(songs));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(songs));
+      } catch (e: any) {
+        console.error("Failed to save to local storage", e);
+        // Check specifically for QuotaExceededError
+        if (
+          e.name === 'QuotaExceededError' ||
+          e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || 
+          e.code === 22
+        ) {
+          alert("⚠️ 儲存失敗：瀏覽器儲存空間已滿。\n\n原因可能是封面圖片檔案過大。建議：\n1. 改用圖片網址 (URL) 而非上傳檔案。\n2. 刪除部分舊資料。\n\n本次變更將無法保存。");
+        } else {
+          alert("⚠️ 儲存時發生未知錯誤，請檢查瀏覽器設定。");
+        }
+      }
     }
   }, [songs, isLoaded]);
 
@@ -86,8 +100,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const getSong = (id: string) => songs.find(s => s.id === id);
 
+  const importData = (newSongs: Song[]) => {
+    // Basic validation to ensure it's an array and has at least one song-like object
+    if (!Array.isArray(newSongs)) {
+        alert("匯入失敗：檔案格式錯誤 (必須是 Array)。");
+        return;
+    }
+    setSongs(newSongs);
+    alert(`成功匯入 ${newSongs.length} 筆資料！`);
+  };
+
   return (
-    <DataContext.Provider value={{ songs, addSong, updateSong, deleteSong, getSong }}>
+    <DataContext.Provider value={{ songs, addSong, updateSong, deleteSong, getSong, importData }}>
       {children}
     </DataContext.Provider>
   );

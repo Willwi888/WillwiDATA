@@ -13,9 +13,10 @@ const Home: React.FC = () => {
     <div className="flex flex-col lg:flex-row min-h-[calc(100vh-64px)] bg-slate-950">
       
       {/* Hero Image Section - Mobile: Top (50vh), Desktop: Left (50%) */}
+      {/* Changed bg-center to bg-top to ensure face is visible */}
       <div className="relative w-full lg:w-1/2 h-[50vh] lg:h-auto overflow-hidden bg-black group">
         <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-90 transition-transform duration-[2s] ease-out group-hover:scale-105"
+            className="absolute inset-0 bg-cover bg-top bg-no-repeat opacity-90 transition-transform duration-[2s] ease-out group-hover:scale-105"
             style={{ backgroundImage: `url(${ARTIST_HERO_IMAGE})` }}
         ></div>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-slate-950/20"></div>

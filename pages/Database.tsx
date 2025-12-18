@@ -1,15 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { Language, ProjectType } from '../types';
 
 const Database: React.FC = () => {
-  const { songs } = useData();
+  const { songs, importData } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLang, setFilterLang] = useState<string>('All');
   const [filterProject, setFilterProject] = useState<string>('All');
   const [showEditorPick, setShowEditorPick] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table'); // Default to table for management
+  
+  // File Input Ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredSongs = useMemo(() => {
     return songs.filter(song => {
@@ -35,27 +38,96 @@ const Database: React.FC = () => {
     return missing;
   };
 
+  // --- Export Function ---
+  const handleExport = () => {
+    const dataStr = JSON.stringify(songs, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Willwi_Database_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // --- Import Function ---
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const result = event.target?.result as string;
+        const parsedData = JSON.parse(result);
+        if (window.confirm(`確定要匯入 ${parsedData.length} 筆資料嗎？\n這將會「覆蓋」目前的資料庫。`)) {
+             importData(parsedData);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("匯入失敗：檔案格式不正確。");
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be selected again if needed
+    e.target.value = '';
+  };
+
   return (
     <div>
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
            <h2 className="text-2xl font-bold text-white tracking-wide">作品資料庫</h2>
            <p className="text-slate-400 text-sm mt-1 font-mono">Total Tracks: {songs.length}</p>
         </div>
         
-        <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 self-start md:self-auto">
-            <button 
-                onClick={() => setViewMode('table')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'table' ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-            >
-                📋 清單
-            </button>
-            <button 
-                onClick={() => setViewMode('grid')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'grid' ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-            >
-                🖼️ 卡片
-            </button>
+        <div className="flex flex-wrap gap-3 items-center">
+             {/* Import/Export Buttons */}
+             <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 mr-2">
+                <button 
+                    onClick={handleExport}
+                    className="px-4 py-2 text-sm font-medium text-brand-accent hover:bg-slate-700 hover:text-white rounded-md transition-all flex items-center gap-2"
+                    title="備份所有資料"
+                >
+                    📤 匯出 JSON
+                </button>
+                <div className="w-px bg-slate-700 my-1 mx-1"></div>
+                <button 
+                    onClick={handleImportClick}
+                    className="px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-700 hover:text-white rounded-md transition-all flex items-center gap-2"
+                    title="還原資料 (會覆蓋現有資料)"
+                >
+                    📥 匯入 JSON
+                </button>
+                <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="application/json" 
+                    onChange={handleFileChange}
+                />
+             </div>
+
+             {/* View Toggle */}
+            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 self-start md:self-auto">
+                <button 
+                    onClick={() => setViewMode('table')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'table' ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                    📋 清單
+                </button>
+                <button 
+                    onClick={() => setViewMode('grid')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'grid' ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                    🖼️ 卡片
+                </button>
+            </div>
         </div>
       </div>
 

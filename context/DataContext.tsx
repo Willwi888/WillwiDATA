@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Song, Language, ProjectType, SongContextType } from '../types';
 
 const DataContext = createContext<SongContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'willwi_music_db_v1';
+const MAX_HISTORY_STEPS = 10; // Keep last 10 steps in memory
 
 // Initial sample data if local storage is empty
 const INITIAL_DATA: Song[] = [
@@ -46,6 +47,12 @@ const INITIAL_DATA: Song[] = [
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Global Player State
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  
+  // History Stack for Undo (Time Machine)
+  const [history, setHistory] = useState<Song[][]>([]);
 
   // Load from LocalStorage on mount
   useEffect(() => {
@@ -70,48 +77,93 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem(STORAGE_KEY, JSON.stringify(songs));
       } catch (e: any) {
         console.error("Failed to save to local storage", e);
-        // Check specifically for QuotaExceededError
         if (
           e.name === 'QuotaExceededError' ||
           e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || 
           e.code === 22
         ) {
           alert("⚠️ 儲存失敗：瀏覽器儲存空間已滿。\n\n原因可能是封面圖片檔案過大。建議：\n1. 改用圖片網址 (URL) 而非上傳檔案。\n2. 刪除部分舊資料。\n\n本次變更將無法保存。");
-        } else {
-          alert("⚠️ 儲存時發生未知錯誤，請檢查瀏覽器設定。");
         }
       }
     }
   }, [songs, isLoaded]);
 
+  // Helper to save history before making changes
+  const saveToHistory = useCallback(() => {
+    setHistory(prev => {
+        const newHistory = [...prev, songs];
+        if (newHistory.length > MAX_HISTORY_STEPS) {
+            return newHistory.slice(newHistory.length - MAX_HISTORY_STEPS);
+        }
+        return newHistory;
+    });
+  }, [songs]);
+
+  const undo = () => {
+    setHistory(prev => {
+        if (prev.length === 0) return prev;
+        const previousState = prev[prev.length - 1];
+        setSongs(previousState);
+        return prev.slice(0, prev.length - 1);
+    });
+  };
+
   const addSong = (song: Song) => {
+    saveToHistory();
     setSongs(prev => [song, ...prev]);
   };
 
   const updateSong = (id: string, updatedFields: Partial<Song>) => {
+    saveToHistory();
+    // If we are updating the currently playing song, update the player too
+    if (currentSong && currentSong.id === id) {
+        setCurrentSong(prev => prev ? ({ ...prev, ...updatedFields } as Song) : null);
+    }
     setSongs(prev => prev.map(s => s.id === id ? { ...s, ...updatedFields } : s));
   };
 
   const deleteSong = (id: string) => {
-    if (window.confirm("確定要刪除這首歌嗎？此操作無法復原。")) {
-      setSongs(prev => prev.filter(s => s.id !== id));
+    saveToHistory();
+    if (currentSong && currentSong.id === id) {
+        setCurrentSong(null);
     }
+    setSongs(prev => prev.filter(s => s.id !== id));
   };
 
   const getSong = (id: string) => songs.find(s => s.id === id);
 
   const importData = (newSongs: Song[]) => {
-    // Basic validation to ensure it's an array and has at least one song-like object
     if (!Array.isArray(newSongs)) {
         alert("匯入失敗：檔案格式錯誤 (必須是 Array)。");
         return;
     }
+    saveToHistory();
     setSongs(newSongs);
     alert(`成功匯入 ${newSongs.length} 筆資料！`);
   };
 
+  const playSong = (song: Song) => {
+    setCurrentSong(song);
+  };
+
+  const closePlayer = () => {
+    setCurrentSong(null);
+  };
+
   return (
-    <DataContext.Provider value={{ songs, addSong, updateSong, deleteSong, getSong, importData }}>
+    <DataContext.Provider value={{ 
+        songs, 
+        addSong, 
+        updateSong, 
+        deleteSong, 
+        getSong, 
+        importData,
+        undo,
+        canUndo: history.length > 0,
+        currentSong,
+        playSong,
+        closePlayer
+    }}>
       {children}
     </DataContext.Provider>
   );

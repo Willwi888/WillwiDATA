@@ -91,6 +91,8 @@ const SongDetail: React.FC = () => {
 
   // Helper to open Musixmatch search
   const searchMusixmatch = () => {
+    if (!editForm.title) return;
+    // 使用 Willwi + 歌名進行精準搜尋
     const query = `Willwi ${editForm.title}`;
     window.open(`https://www.musixmatch.com/search/${encodeURIComponent(query)}`, '_blank');
   };
@@ -288,6 +290,8 @@ const SongDetail: React.FC = () => {
                                 value={editForm.appleMusicLink || ''}
                                 onChange={(e) => setEditForm({...editForm, appleMusicLink: e.target.value})}
                             />
+                            
+                            {/* Musixmatch Search Section */}
                             <div className="flex gap-2">
                                 <input 
                                     className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white" 
@@ -296,13 +300,15 @@ const SongDetail: React.FC = () => {
                                     onChange={(e) => setEditForm({...editForm, musixmatchUrl: e.target.value})}
                                 />
                                 <button 
+                                    type="button"
                                     onClick={searchMusixmatch}
-                                    className="px-3 bg-slate-700 hover:bg-brand-accent hover:text-slate-900 rounded border border-slate-600 transition-colors text-xs whitespace-nowrap font-bold"
+                                    className="px-3 bg-slate-700 hover:bg-brand-accent hover:text-slate-900 rounded border border-slate-600 transition-colors text-xs whitespace-nowrap font-bold flex items-center gap-1"
                                     title="在 Musixmatch 上搜尋這首歌"
                                 >
                                     🔍 搜尋
                                 </button>
                             </div>
+
                              <input 
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white" 
                                 placeholder="YouTube Music URL"

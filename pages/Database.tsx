@@ -4,7 +4,7 @@ import { useData } from '../context/DataContext';
 import { Language, ProjectType } from '../types';
 
 const Database: React.FC = () => {
-  const { songs, importData } = useData();
+  const { songs, importData, undo, canUndo, playSong, currentSong } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLang, setFilterLang] = useState<string>('All');
   const [filterProject, setFilterProject] = useState<string>('All');
@@ -87,6 +87,18 @@ const Database: React.FC = () => {
         </div>
         
         <div className="flex flex-wrap gap-3 items-center">
+             {/* Time Machine (Undo) */}
+             <button
+                onClick={undo}
+                disabled={!canUndo}
+                className={`px-4 py-2 text-sm font-bold rounded-md transition-all flex items-center gap-2 border ${canUndo ? 'bg-orange-600 border-orange-500 text-white hover:bg-orange-500 shadow-lg' : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'}`}
+                title="回到上一步 (Session Undo)"
+             >
+                ⏪ 時光機 (復原)
+             </button>
+
+             <div className="w-px bg-slate-700 h-8 mx-1 hidden md:block"></div>
+
              {/* Import/Export Buttons */}
              <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 mr-2">
                 <button 
@@ -172,29 +184,52 @@ const Database: React.FC = () => {
         // Grid View
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSongs.map(song => (
-            <Link key={song.id} to={`/song/${song.id}`} className="group bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-brand-accent transition-all hover:shadow-2xl">
-                <div className="relative aspect-square overflow-hidden bg-black">
-                <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
-                {song.isEditorPick && (
-                    <div className="absolute top-2 right-2 bg-brand-gold text-slate-900 text-xs font-bold px-2 py-1 rounded shadow">
-                    PICK
+            <div key={song.id} className="group bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-brand-accent transition-all hover:shadow-2xl relative">
+                <Link to={`/song/${song.id}`} className="block">
+                    <div className="relative aspect-square overflow-hidden bg-black">
+                        <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
+                        {song.isEditorPick && (
+                            <div className="absolute top-2 right-2 bg-brand-gold text-slate-900 text-xs font-bold px-2 py-1 rounded shadow z-10">
+                            PICK
+                            </div>
+                        )}
+                        {/* Hover Play Button Overlay */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                             {/* Only show play if spotify ID exists */}
+                        </div>
                     </div>
-                )}
-                </div>
-                <div className="p-4">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h3 className="font-bold text-lg text-white group-hover:text-brand-accent transition-colors">{song.title}</h3>
-                        <p className="text-sm text-slate-500">{song.versionLabel}</p>
+                </Link>
+                <div className="p-4 relative">
+                     {/* Floating Play Button */}
+                     {song.spotifyId && (
+                        <button 
+                            onClick={(e) => { e.preventDefault(); playSong(song); }}
+                            className={`absolute -top-6 right-4 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 ${currentSong?.id === song.id ? 'bg-green-500 text-white' : 'bg-brand-accent text-slate-900'}`}
+                            title="在背景播放"
+                        >
+                            {currentSong?.id === song.id ? (
+                                <span className="animate-pulse">lIl</span>
+                            ) : (
+                                <svg className="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            )}
+                        </button>
+                    )}
+
+                    <Link to={`/song/${song.id}`}>
+                        <div className="flex justify-between items-start">
+                            <div className="pr-12">
+                                <h3 className="font-bold text-lg text-white group-hover:text-brand-accent transition-colors truncate">{song.title}</h3>
+                                <p className="text-sm text-slate-500 truncate">{song.versionLabel}</p>
+                            </div>
+                        </div>
+                    </Link>
+                    
+                    <div className="mt-4 flex items-center justify-between">
+                         <span className="text-xs px-2 py-1 bg-slate-800 rounded text-slate-400 border border-slate-700">{song.language}</span>
+                         <span className="text-xs text-slate-600 font-mono">{song.releaseDate}</span>
                     </div>
-                    <span className="text-xs px-2 py-1 bg-slate-800 rounded text-slate-400 border border-slate-700">{song.language}</span>
                 </div>
-                <div className="mt-4 flex items-center justify-between text-xs text-slate-600 font-mono">
-                    <span>{song.releaseDate}</span>
-                    <span>{song.projectType}</span>
-                </div>
-                </div>
-            </Link>
+            </div>
             ))}
         </div>
       ) : (
@@ -203,6 +238,7 @@ const Database: React.FC = () => {
             <table className="min-w-full divide-y divide-slate-800">
                 <thead className="bg-slate-950">
                     <tr>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-16">Play</th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">封面</th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">作品資訊</th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">ISRC</th>
@@ -214,15 +250,33 @@ const Database: React.FC = () => {
                 <tbody className="bg-slate-900 divide-y divide-slate-800">
                     {filteredSongs.map(song => {
                         const missing = getMissingFields(song);
+                        const isPlaying = currentSong?.id === song.id;
                         return (
-                            <tr key={song.id} className="hover:bg-slate-800/50 transition-colors group">
+                            <tr key={song.id} className={`hover:bg-slate-800/50 transition-colors group ${isPlaying ? 'bg-slate-800/80' : ''}`}>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex-shrink-0 h-12 w-12 bg-black rounded overflow-hidden">
-                                        <img className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" src={song.coverUrl} alt="" />
+                                    {song.spotifyId ? (
+                                        <button 
+                                            onClick={() => playSong(song)}
+                                            className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${isPlaying ? 'border-green-500 text-green-500' : 'border-slate-600 text-slate-400 hover:border-white hover:text-white'}`}
+                                        >
+                                            {isPlaying ? (
+                                                <span className="text-xs font-bold">||</span> 
+                                            ) : (
+                                                <svg className="w-3 h-3 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            )}
+                                        </button>
+                                    ) : (
+                                        <span className="text-slate-700 block w-8 text-center">-</span>
+                                    )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex-shrink-0 h-12 w-12 bg-black rounded overflow-hidden relative">
+                                        <img className={`h-full w-full object-cover transition-opacity ${isPlaying ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'}`} src={song.coverUrl} alt="" />
+                                        {isPlaying && <div className="absolute inset-0 bg-green-500/20 ring-2 ring-green-500 ring-inset"></div>}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-bold text-white">{song.title}</div>
+                                    <div className={`text-sm font-bold ${isPlaying ? 'text-green-400' : 'text-white'}`}>{song.title}</div>
                                     <div className="text-xs text-slate-500">{song.versionLabel}</div>
                                     <div className="text-xs text-slate-600 md:hidden mt-1 font-mono">{song.isrc}</div>
                                 </td>

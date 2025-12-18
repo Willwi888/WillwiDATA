@@ -52,4 +52,11 @@ export interface SongContextType {
   deleteSong: (id: string) => void;
   getSong: (id: string) => Song | undefined;
   importData: (newSongs: Song[]) => void;
+  // Time Machine features
+  undo: () => void;
+  canUndo: boolean;
+  // Global Player features
+  currentSong: Song | null;
+  playSong: (song: Song) => void;
+  closePlayer: () => void;
 }

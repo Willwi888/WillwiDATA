@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useData } from '../context/DataContext'; // Import useData
+import GlobalPlayer from './GlobalPlayer'; // Import GlobalPlayer
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { currentSong } = useData(); // Get currentSong to adjust padding
 
   const isActive = (path: string) => location.pathname === path 
     ? "text-brand-accent font-bold" 
@@ -73,14 +76,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         )}
       </nav>
 
-      <main className="flex-grow">
+      <main className={`flex-grow ${currentSong ? 'pb-24' : ''}`}> {/* Add padding if player is active */}
         {/* Remove default padding for Home to allow full bleed hero */}
         <div className={location.pathname === '/' ? '' : "max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8"}>
           {children}
         </div>
       </main>
 
-      <footer className="bg-slate-950 border-t border-slate-900 mt-auto">
+      <footer className={`bg-slate-950 border-t border-slate-900 mt-auto ${currentSong ? 'pb-20' : ''}`}>
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-slate-600 text-xs tracking-widest uppercase">
             © {new Date().getFullYear()} Willwi Music.
@@ -95,6 +98,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </div>
       </footer>
+
+      {/* Global Player */}
+      <GlobalPlayer />
     </div>
   );
 };

@@ -37,41 +37,41 @@ const Home: React.FC = () => {
           
           <div className="h-1 w-20 bg-brand-accent mb-8"></div>
           
-          <h2 className="text-2xl md:text-3xl font-light tracking-wide text-slate-300 mb-6">
-            Multilingual Music Catalog
+          <h2 className="text-3xl md:text-4xl font-bold tracking-wide text-white mb-6 uppercase leading-tight">
+            Willwi Music Catalog.
           </h2>
           
-          <p className="text-slate-400 text-lg leading-relaxed mb-10 font-light">
-            管理多語系創作，連結全球音樂平台。<br/>
-            Managing structured metadata for Spotify, Apple Music, and YouTube OAC.
+          <p className="text-slate-400 text-lg leading-relaxed mb-10 font-light border-l-2 border-slate-700 pl-4">
+            Reborn on Feb 25th.<br/>
+            Simply to leave a record of existence.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-16">
             <Link 
                 to="/database" 
-                className="px-8 py-4 bg-white text-slate-950 font-bold text-center uppercase tracking-wider hover:bg-brand-accent transition-colors"
+                className="px-8 py-4 bg-brand-accent text-slate-900 font-black text-center uppercase tracking-widest hover:bg-white transition-all shadow-lg hover:shadow-brand-accent/50"
             >
-              進入資料庫 Database
+              DATABASE
             </Link>
             <Link 
-                to="/add" 
-                className="px-8 py-4 border border-slate-600 text-slate-300 font-bold text-center uppercase tracking-wider hover:border-white hover:text-white transition-colors"
+                to="/interactive" 
+                className="px-8 py-4 border border-slate-600 text-slate-300 font-bold text-center uppercase tracking-widest hover:border-white hover:text-white transition-colors"
             >
-              新增作品 Add Song
+              INTERACTIVE
             </Link>
           </div>
 
           {/* Featured Song Mini Player */}
           {featured && (
             <div className="border-t border-slate-800 pt-8 mt-auto">
-              <p className="text-xs font-bold text-brand-accent uppercase tracking-widest mb-4">Latest / Featured</p>
-              <Link to={`/song/${featured.id}`} className="flex items-center gap-4 group cursor-pointer hover:bg-slate-900/50 p-2 rounded-lg transition-colors -mx-2">
-                <img src={featured.coverUrl} className="w-16 h-16 object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt="cover" />
+              <p className="text-[10px] font-bold text-brand-accent uppercase tracking-[0.2em] mb-4">Latest Release / Featured</p>
+              <Link to={`/song/${featured.id}`} className="flex items-center gap-4 group cursor-pointer hover:bg-slate-900/50 p-3 rounded-xl transition-colors -mx-3 border border-transparent hover:border-slate-800">
+                <img src={featured.coverUrl} className="w-16 h-16 object-cover rounded shadow-lg grayscale group-hover:grayscale-0 transition-all duration-500" alt="cover" />
                 <div>
                   <h3 className="text-xl font-bold text-white group-hover:text-brand-accent transition-colors">{featured.title}</h3>
-                  <p className="text-sm text-slate-500">{featured.versionLabel || featured.releaseDate}</p>
+                  <p className="text-xs text-slate-500 font-mono mt-1">{featured.releaseDate}</p>
                 </div>
-                <div className="ml-auto w-10 h-10 rounded-full border border-slate-600 flex items-center justify-center text-slate-400 group-hover:border-brand-accent group-hover:text-brand-accent">
+                <div className="ml-auto w-10 h-10 rounded-full border border-slate-600 flex items-center justify-center text-slate-400 group-hover:border-brand-accent group-hover:text-brand-accent transition-all">
                    →
                 </div>
               </Link>

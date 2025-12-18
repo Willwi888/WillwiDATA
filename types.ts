@@ -13,49 +13,70 @@ export enum Language {
 
 export enum ProjectType {
   Indie = '獨立發行',
-  PaoMien = '泡麵聲學院'
+  PaoMien = '泡麵聲學院',
+  Commercial = '商業合作'
+}
+
+export enum ReleaseCategory {
+  Single = 'Single',
+  EP = 'EP',
+  Album = 'Album'
 }
 
 export interface Song {
   id: string;
   title: string;
-  versionLabel?: string; // e.g., "Acoustic Ver.", "Remix"
+  versionLabel?: string; 
   coverUrl: string;
+  coverOverlayText?: string; 
   language: Language;
   projectType: ProjectType;
+  releaseCategory: ReleaseCategory;
+  releaseCompany?: string;
   releaseDate: string;
   isEditorPick: boolean;
   
-  // Metadata
+  // Standard Metadata (MusicBrainz/DistroKid)
+  genre?: string;      // Added: Genre
+  isExplicit?: boolean; // Added: Explicit Content
+  
+  // Industry Standard IDs
   isrc?: string;
   upc?: string;
-  spotifyId?: string; // for embedding
-  musicBrainzArtistId?: string; // New field
+  musicBrainzId?: string; // Recording ID
+  musicBrainzReleaseId?: string; // Release ID
   
-  // External Links
-  youtubeUrl?: string; // Lyric Video / MV
-  musixmatchUrl?: string;
-  youtubeMusicUrl?: string;
-  spotifyLink?: string; // Direct link
+  // Platform IDs (For API usage)
+  spotifyId?: string; 
+  appleMusicId?: string;
+  youtubeVideoId?: string;
+  
+  // Public Links (Asset Management)
+  distrokidHyperFollowLink?: string; // Added: Main DistroKid Link
+  spotifyLink?: string; 
   appleMusicLink?: string;
+  youtubeMusicLink?: string;
+  youtubeUrl?: string;
+  kkboxLink?: string;     
+  musixmatchLink?: string;
+  streetvoiceLink?: string; 
   
   // Content
+  audioUrl?: string; 
   lyrics?: string;
   description?: string;
-  credits?: string; // Producer, Arranger, etc.
+  credits?: string; 
 }
 
 export interface SongContextType {
   songs: Song[];
-  addSong: (song: Song) => void;
+  addSong: (song: Song) => Promise<boolean>;
   updateSong: (id: string, updatedSong: Partial<Song>) => void;
   deleteSong: (id: string) => void;
   getSong: (id: string) => Song | undefined;
   importData: (newSongs: Song[]) => void;
-  // Time Machine features
   undo: () => void;
   canUndo: boolean;
-  // Global Player features
   currentSong: Song | null;
   playSong: (song: Song) => void;
   closePlayer: () => void;

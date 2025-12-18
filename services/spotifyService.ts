@@ -24,6 +24,14 @@ export interface SpotifyTrack {
   uri: string;
 }
 
+export interface SpotifyAlbum {
+    id: string;
+    name: string;
+    release_date: string;
+    images: { url: string }[];
+    external_ids?: { upc?: string; ean?: string };
+}
+
 export const getSpotifyToken = async () => {
   if (accessToken && Date.now() < tokenExpiration) {
     return accessToken;
@@ -73,4 +81,46 @@ export const searchSpotifyTracks = async (query: string): Promise<SpotifyTrack[]
     console.error("Spotify Search Error:", error);
     return [];
   }
+};
+
+export const searchSpotifyAlbums = async (query: string): Promise<SpotifyAlbum[]> => {
+    const token = await getSpotifyToken();
+    if (!token) return [];
+
+    try {
+        const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=5`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+        return data.albums?.items || [];
+    } catch (error) {
+        console.error("Spotify Album Search Error:", error);
+        return [];
+    }
+};
+
+export const getSpotifyAlbumTracks = async (albumId: string): Promise<SpotifyTrack[]> => {
+    const token = await getSpotifyToken();
+    if (!token) return [];
+
+    try {
+        const response = await fetch(`https://api.spotify.com/v1/albums/${albumId}/tracks`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+        // Return tracks. Note: API doesn't return full album object in this endpoint.
+        // We mock it to satisfy SpotifyTrack interface for basic usage.
+        return (data.items || []).map((t: any) => ({
+            ...t,
+            album: { name: '', release_date: '', images: [] } 
+        }));
+    } catch (error) {
+        console.error("Spotify Album Tracks Error:", error);
+        return [];
+    }
 };

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { Song, Language, ProjectType, SongContextType } from '../types';
+import { Song, Language, ProjectType, SongContextType, ReleaseCategory } from '../types';
 
 const DataContext = createContext<SongContextType | undefined>(undefined);
 
@@ -15,15 +15,19 @@ const INITIAL_DATA: Song[] = [
     coverUrl: 'https://picsum.photos/id/26/400/400',
     language: Language.Mandarin,
     projectType: ProjectType.Indie,
+    releaseCategory: ReleaseCategory.Single,
     releaseDate: '2023-10-15',
     isEditorPick: true,
+    genre: 'Mandopop',
+    isExplicit: false,
     isrc: 'TW-A01-23-00001',
     spotifyId: '4uLU6hMCjMI75M1A2tKZBC', // Example ID
     lyrics: "走在 熟悉的街角\n回憶 像是海浪拍打\n每一個呼吸\n都是你的氣息\n再愛一次\n能不能\n再愛一次",
     description: "一首關於失去與重逢的抒情搖滾。",
     youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Rick roll as placeholder
-    musixmatchUrl: "https://www.musixmatch.com/artist/Willwi",
-    youtubeMusicUrl: "https://music.youtube.com/channel/WillwiID",
+    distrokidHyperFollowLink: "https://distrokid.com/hyperfollow/willwi/example",
+    musixmatchLink: "https://www.musixmatch.com/artist/Willwi",
+    youtubeMusicLink: "https://music.youtube.com/channel/WillwiID",
     spotifyLink: "https://open.spotify.com/artist/3ascZ8Rb2KDw4QyCy29Om4",
     appleMusicLink: "https://music.apple.com/us/artist/willwi/1798471457"
   },
@@ -33,12 +37,16 @@ const INITIAL_DATA: Song[] = [
     coverUrl: 'https://picsum.photos/id/192/400/400',
     language: Language.Japanese,
     projectType: ProjectType.PaoMien,
+    releaseCategory: ReleaseCategory.Single,
     releaseDate: '2024-01-20',
     isEditorPick: false,
+    genre: 'J-Pop',
+    isExplicit: false,
     isrc: 'TW-A01-24-00002',
     description: "深夜肚子餓時的即興創作。",
-    musixmatchUrl: "https://www.musixmatch.com/artist/Willwi",
-    youtubeMusicUrl: "https://music.youtube.com/channel/WillwiID",
+    distrokidHyperFollowLink: "https://distrokid.com/hyperfollow/willwi/noodles",
+    musixmatchLink: "https://www.musixmatch.com/artist/Willwi",
+    youtubeMusicLink: "https://music.youtube.com/channel/WillwiID",
     spotifyLink: "https://open.spotify.com/artist/3ascZ8Rb2KDw4QyCy29Om4",
     appleMusicLink: "https://music.apple.com/us/artist/willwi/1798471457"
   }
@@ -108,9 +116,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  const addSong = (song: Song) => {
-    saveToHistory();
-    setSongs(prev => [song, ...prev]);
+  const addSong = async (song: Song): Promise<boolean> => {
+    try {
+        saveToHistory();
+        setSongs(prev => [song, ...prev]);
+        return true;
+    } catch (error) {
+        console.error("Failed to add song", error);
+        return false;
+    }
   };
 
   const updateSong = (id: string, updatedFields: Partial<Song>) => {

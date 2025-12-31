@@ -115,7 +115,7 @@ const AdminDashboard: React.FC = () => {
                 }
             } else if (Array.isArray(data)) {
                 if (window.confirm("偵測到完整備份檔，這將會清空目前所有資料。確定嗎？")) {
-                    importData(data);
+                    await importData(data);
                 }
             }
           } catch (e) { alert("讀取同步檔失敗。"); }

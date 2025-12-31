@@ -11,10 +11,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  const handleDonate = (amount: number, packageName: string) => {
+  const handleDonate = async (amount: number, packageName: string) => {
       // Simulation of payment process
       if(window.confirm(`Confirm support of NT$ ${amount} for Willwi?`)) {
-          addCredit(amount * 10, `Support: ${packageName}`); // 1 NTD = 10 Credits
+          await addCredit(amount * 10, `Support: ${packageName}`); // 1 NTD = 10 Credits
           alert(`交易成功。已增加 ${amount * 10} 點 Thermal 算力。`);
           onClose();
       }

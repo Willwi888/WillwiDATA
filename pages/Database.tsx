@@ -58,12 +58,12 @@ const Database: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const result = event.target?.result as string;
         const parsedData = JSON.parse(result);
         if (window.confirm(`Override database with ${parsedData.length} entries?`)) {
-             importData(parsedData);
+             await importData(parsedData);
         }
       } catch (err) {
         console.error(err);

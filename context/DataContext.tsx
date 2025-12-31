@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Song, Language, ProjectType, SongContextType, ReleaseCategory } from '../types';
+import { supabase } from '../services/supabaseClient';
 
 const DataContext = createContext<SongContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'willwi_music_db_v1';
 const MAX_HISTORY_STEPS = 10; // Keep last 10 steps in memory
 
 // Initial sample data if local storage is empty
@@ -62,39 +62,71 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // History Stack for Undo (Time Machine)
   const [history, setHistory] = useState<Song[][]>([]);
 
-  // Load from LocalStorage on mount
-  useEffect(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    if (savedData) {
-      try {
-        setSongs(JSON.parse(savedData));
-      } catch (e) {
-        console.error("Failed to parse local storage", e);
-        setSongs(INITIAL_DATA);
-      }
-    } else {
-      setSongs(INITIAL_DATA);
-    }
-    setIsLoaded(true);
-  }, []);
+  // Helper function to convert camelCase to snake_case for database
+  const toSnakeCase = (obj: any): any => {
+    const snakeObj: any = {};
+    Object.keys(obj).forEach(key => {
+      const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+      snakeObj[snakeKey] = obj[key];
+    });
+    return snakeObj;
+  };
 
-  // Save to LocalStorage whenever songs change
+  // Helper function to convert snake_case to camelCase from database
+  const toCamelCase = (obj: any): any => {
+    const camelObj: any = {};
+    Object.keys(obj).forEach(key => {
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      camelObj[camelKey] = obj[key];
+    });
+    return camelObj;
+  };
+
+  // Load from Supabase on mount
   useEffect(() => {
-    if (isLoaded) {
+    const loadSongs = async () => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(songs));
-      } catch (e: any) {
-        console.error("Failed to save to local storage", e);
-        if (
-          e.name === 'QuotaExceededError' ||
-          e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || 
-          e.code === 22
-        ) {
-          alert("⚠️ 儲存失敗：瀏覽器儲存空間已滿。\n\n原因可能是封面圖片檔案過大。建議：\n1. 改用圖片網址 (URL) 而非上傳檔案。\n2. 刪除部分舊資料。\n\n本次變更將無法保存。");
+        const { data, error } = await supabase
+          .from('songs')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error loading songs from Supabase:', error);
+          // Fallback to initial data if Supabase fails
+          setSongs(INITIAL_DATA);
+        } else {
+          // Convert snake_case to camelCase and set songs
+          const songsData = (data || []).map(toCamelCase);
+          setSongs(songsData.length > 0 ? songsData : INITIAL_DATA);
         }
+      } catch (error) {
+        console.error('Failed to load songs:', error);
+        setSongs(INITIAL_DATA);
+      } finally {
+        setIsLoaded(true);
       }
-    }
-  }, [songs, isLoaded]);
+    };
+
+    loadSongs();
+
+    // Set up real-time subscription for song changes
+    const subscription = supabase
+      .channel('songs_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'songs' },
+        (payload) => {
+          console.log('Song changed:', payload);
+          // Reload songs on any change
+          loadSongs();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Helper to save history before making changes
   const saveToHistory = useCallback(() => {
@@ -119,41 +151,126 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addSong = async (song: Song): Promise<boolean> => {
     try {
         saveToHistory();
+        
+        // Convert camelCase to snake_case for database
+        const dbSong = toSnakeCase(song);
+        
+        const { error } = await supabase
+          .from('songs')
+          .insert([dbSong]);
+        
+        if (error) {
+          console.error('Error adding song to Supabase:', error);
+          alert('儲存失敗：無法新增歌曲到資料庫。請檢查網路連線。');
+          return false;
+        }
+        
+        // Optimistically update local state
         setSongs(prev => [song, ...prev]);
         return true;
     } catch (error) {
         console.error("Failed to add song", error);
+        alert('儲存失敗：發生錯誤。');
         return false;
     }
   };
 
-  const updateSong = (id: string, updatedFields: Partial<Song>) => {
-    saveToHistory();
-    // If we are updating the currently playing song, update the player too
-    if (currentSong && currentSong.id === id) {
-        setCurrentSong(prev => prev ? ({ ...prev, ...updatedFields } as Song) : null);
+  const updateSong = async (id: string, updatedFields: Partial<Song>) => {
+    try {
+        saveToHistory();
+        
+        // Convert camelCase to snake_case for database
+        const dbUpdates = toSnakeCase(updatedFields);
+        
+        const { error } = await supabase
+          .from('songs')
+          .update(dbUpdates)
+          .eq('id', id);
+        
+        if (error) {
+          console.error('Error updating song in Supabase:', error);
+          alert('更新失敗：無法更新歌曲資料。請檢查網路連線。');
+          return;
+        }
+        
+        // Update local state
+        if (currentSong && currentSong.id === id) {
+            setCurrentSong(prev => prev ? ({ ...prev, ...updatedFields } as Song) : null);
+        }
+        setSongs(prev => prev.map(s => s.id === id ? { ...s, ...updatedFields } : s));
+    } catch (error) {
+        console.error("Failed to update song", error);
+        alert('更新失敗：發生錯誤。');
     }
-    setSongs(prev => prev.map(s => s.id === id ? { ...s, ...updatedFields } : s));
   };
 
-  const deleteSong = (id: string) => {
-    saveToHistory();
-    if (currentSong && currentSong.id === id) {
-        setCurrentSong(null);
+  const deleteSong = async (id: string) => {
+    try {
+        saveToHistory();
+        
+        const { error } = await supabase
+          .from('songs')
+          .delete()
+          .eq('id', id);
+        
+        if (error) {
+          console.error('Error deleting song from Supabase:', error);
+          alert('刪除失敗：無法刪除歌曲。請檢查網路連線。');
+          return;
+        }
+        
+        // Update local state
+        if (currentSong && currentSong.id === id) {
+            setCurrentSong(null);
+        }
+        setSongs(prev => prev.filter(s => s.id !== id));
+    } catch (error) {
+        console.error("Failed to delete song", error);
+        alert('刪除失敗：發生錯誤。');
     }
-    setSongs(prev => prev.filter(s => s.id !== id));
   };
 
   const getSong = (id: string) => songs.find(s => s.id === id);
 
-  const importData = (newSongs: Song[]) => {
+  const importData = async (newSongs: Song[]) => {
     if (!Array.isArray(newSongs)) {
         alert("匯入失敗：檔案格式錯誤 (必須是 Array)。");
         return;
     }
-    saveToHistory();
-    setSongs(newSongs);
-    alert(`成功匯入 ${newSongs.length} 筆資料！`);
+    
+    try {
+        saveToHistory();
+        
+        // Convert all songs to snake_case
+        const dbSongs = newSongs.map(toSnakeCase);
+        
+        // Delete all existing songs first using a more explicit condition
+        const { error: deleteError } = await supabase
+          .from('songs')
+          .delete()
+          .gte('created_at', '1970-01-01'); // Delete all records with valid timestamp
+        
+        if (deleteError) {
+          console.error('Error deleting existing songs:', deleteError);
+        }
+        
+        // Insert new songs
+        const { error: insertError } = await supabase
+          .from('songs')
+          .insert(dbSongs);
+        
+        if (insertError) {
+          console.error('Error importing songs to Supabase:', insertError);
+          alert('匯入失敗：無法匯入資料到資料庫。');
+          return;
+        }
+        
+        setSongs(newSongs);
+        alert(`成功匯入 ${newSongs.length} 筆資料！`);
+    } catch (error) {
+        console.error("Failed to import data", error);
+        alert('匯入失敗：發生錯誤。');
+    }
   };
 
   const playSong = (song: Song) => {

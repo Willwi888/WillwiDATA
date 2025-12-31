@@ -106,6 +106,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (name: string, email: string) => {
     try {
+      // NOTE: This is a simplified user management system without proper authentication.
+      // In a production environment, you should implement proper authentication using
+      // Supabase Auth (supabase.auth.signUp, supabase.auth.signIn) to secure user data.
+      // The current implementation allows anyone to access any user account by email.
+      
       // Check if user exists in Supabase
       const { data: existingUsers } = await supabase
         .from('users')
@@ -135,8 +140,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (error) {
           console.error('Error creating user in Supabase:', error);
-          // Fallback to local-only user
-          userId = Date.now().toString();
+          // Fallback to local-only user if database is unavailable
+          // This maintains functionality when offline but won't sync to database
+          userId = `local-${Date.now()}`;
+          console.warn('Using local-only user ID. Data will not be synced to Supabase.');
         } else {
           userId = newUser.id;
           credits = newUser.credits;

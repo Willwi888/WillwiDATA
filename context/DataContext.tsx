@@ -244,11 +244,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Convert all songs to snake_case
         const dbSongs = newSongs.map(toSnakeCase);
         
-        // Delete all existing songs first
+        // Delete all existing songs first using a more explicit condition
         const { error: deleteError } = await supabase
           .from('songs')
           .delete()
-          .neq('id', ''); // Delete all records
+          .gte('created_at', '1970-01-01'); // Delete all records with valid timestamp
         
         if (deleteError) {
           console.error('Error deleting existing songs:', deleteError);

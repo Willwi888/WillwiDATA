@@ -20,12 +20,12 @@ interface Transaction {
 interface UserContextType {
   user: User | null;
   isAdmin: boolean;
-  login: (name: string, email: string) => void;
+  login: (name: string, email: string) => Promise<void>;
   logout: () => void;
   enableAdmin: () => void;
   logoutAdmin: () => void;
-  addCredit: (amount: number, note: string) => void;
-  deductCredit: (amount: number) => boolean;
+  addCredit: (amount: number, note: string) => Promise<void>;
+  deductCredit: (amount: number) => Promise<boolean>;
   getAllUsers: () => User[]; // Admin only
   getAllTransactions: () => Transaction[]; // Admin only
 }

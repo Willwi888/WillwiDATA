@@ -71,10 +71,10 @@ export interface Song {
 export interface SongContextType {
   songs: Song[];
   addSong: (song: Song) => Promise<boolean>;
-  updateSong: (id: string, updatedSong: Partial<Song>) => void;
-  deleteSong: (id: string) => void;
+  updateSong: (id: string, updatedSong: Partial<Song>) => Promise<void>;
+  deleteSong: (id: string) => Promise<void>;
   getSong: (id: string) => Song | undefined;
-  importData: (newSongs: Song[]) => void;
+  importData: (newSongs: Song[]) => Promise<void>;
   undo: () => void;
   canUndo: boolean;
   currentSong: Song | null;

@@ -30,9 +30,9 @@ const SongDetail: React.FC = () => {
 
   if (!song) return <div className="text-white text-center mt-20 text-xs uppercase tracking-widest">Loading Asset Data...</div>;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (song && id) {
-      updateSong(id, editForm);
+      await updateSong(id, editForm);
       setSong({ ...song, ...editForm } as Song);
       setIsEditing(false);
     }
